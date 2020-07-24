@@ -18,7 +18,7 @@
 #define initiaSecond 0x00
 
 // Set to true if you want to set initial time during programming
-#define setTime false
+#define setTime true
 
 LiquidCrystal lcd(2,3,4,5,6,7,8);
 
