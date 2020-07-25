@@ -99,7 +99,8 @@ void setup() {
 int seconds, minutes, hours, receivedByteCount = 0, date, month, year, day;
 String amOrPm;
 
-void loop() {
+
+void getTimeFromRtc() {
   Wire.beginTransmission(ds1307Addr);
   Wire.write(secondRegisterAddr);
   Wire.endTransmission();
@@ -125,8 +126,11 @@ void loop() {
     }
     ++receivedByteCount;
   }
+}
 
-  if (hours & 0b00100000) {
+
+void displayTimeInLcd() {
+    if (hours & 0b00100000) {
     amOrPm = "PM";
   } else {
     amOrPm = "AM";
@@ -174,4 +178,9 @@ void loop() {
   receivedByteCount = 0;
 
   delay(1000);
+}
+
+void loop() {
+  getTimeFromRtc();
+  displayTimeInLcd();
 }
