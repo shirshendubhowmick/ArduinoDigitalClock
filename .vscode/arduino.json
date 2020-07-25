@@ -2,5 +2,5 @@
     "port": "/dev/tty.usbserial-00000000",
     "board": "arduino:avr:uno",
     "programmer": "USBasp",
-    "sketch": "digital_clock/digital_clock.ino"
+    "sketch": "src/digital_clock/digital_clock.ino"
 }
