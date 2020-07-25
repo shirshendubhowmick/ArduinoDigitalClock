@@ -59,7 +59,7 @@ void setup() {
   // Join I2C bus as master
   Wire.begin();
 
-  if(setTime) {
+  if (setTime) {
     Wire.beginTransmission(ds1307Addr);
     // Select control register
     Wire.write(controlRegisterAddr);
@@ -67,6 +67,7 @@ void setup() {
     Wire.write(0x00);
     Wire.endTransmission();
     delay(1);
+  
     Wire.beginTransmission(ds1307Addr);
     Wire.write(dayRegisterAddr);
     Wire.write(initialDayCount);
@@ -75,6 +76,7 @@ void setup() {
     Wire.write(initialYear);
     Wire.endTransmission();
     delay(1);
+  
     Wire.beginTransmission(ds1307Addr);
     // Select second's register
     Wire.write(secondRegisterAddr);
@@ -102,9 +104,9 @@ void loop() {
   Wire.write(secondRegisterAddr);
   Wire.endTransmission();
   delay(1);
-  Wire.requestFrom(0b1101000, 7);
+  Wire.requestFrom(ds1307Addr, 7, true);
  
-  while(Wire.available()) { 
+  while(Wire.available()) {
     long int receivedByte = Wire.read();    // receive a byte as character
     switch (receivedByteCount) {
       case 0: seconds = receivedByte;
