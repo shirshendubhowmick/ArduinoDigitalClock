@@ -20,12 +20,12 @@
 // Set to true if you want to set initial time during programming
 #define setTime true
 
-LiquidCrystal lcd(2,3,4,5,6,7,8);
+LiquidCrystal lcd(2, 3, 4, 5, 6, 7, 8);
 
 
 //Get day name from day count
 String getDayName(int dayCount) {
-  switch(dayCount) {
+  switch (dayCount) {
     case 1: return "MON";
     case 2: return "TUE";
     case 3: return "WED";
@@ -38,7 +38,7 @@ String getDayName(int dayCount) {
 
 // Get month name from month count
 String getMonthName(int monthCount) {
-  switch(monthCount) {
+  switch (monthCount) {
     case 1: return "JAN";
     case 2: return "FEB";
     case 3: return "MAR";
@@ -67,7 +67,7 @@ void setup() {
     Wire.write(0x00);
     Wire.endTransmission();
     delay(1);
-  
+
     Wire.beginTransmission(ds1307Addr);
     Wire.write(dayRegisterAddr);
     Wire.write(initialDayCount);
@@ -76,7 +76,7 @@ void setup() {
     Wire.write(initialYear);
     Wire.endTransmission();
     delay(1);
-  
+
     Wire.beginTransmission(ds1307Addr);
     // Select second's register
     Wire.write(secondRegisterAddr);
@@ -86,17 +86,17 @@ void setup() {
     Wire.endTransmission();
     delay(1);
   }
-  lcd.begin(16,2);
-  lcd.setCursor(5,0);
+  lcd.begin(16, 2);
+  lcd.setCursor(5, 0);
   lcd.print("Welcome");
-  lcd.setCursor(0,1);
+  lcd.setCursor(0, 1);
   lcd.print("Initializing....");
   delay(3000);
   lcd.clear();
 }
 
 
-int seconds, minutes, hours, receivedByteCount=0, date, month, year, day;
+int seconds, minutes, hours, receivedByteCount = 0, date, month, year, day;
 String amOrPM;
 
 void loop() {
@@ -105,42 +105,42 @@ void loop() {
   Wire.endTransmission();
   delay(1);
   Wire.requestFrom(ds1307Addr, 7, true);
- 
-  while(Wire.available()) {
+
+  while (Wire.available()) {
     long int receivedByte = Wire.read();    // receive a byte as character
     switch (receivedByteCount) {
       case 0: seconds = receivedByte;
-              break;
+        break;
       case 1: minutes = receivedByte;
-              break;
+        break;
       case 2: hours = receivedByte;
-              break;
+        break;
       case 3: day = receivedByte;
-              break;
+        break;
       case 4: date = receivedByte;
-              break;
+        break;
       case 5: month = receivedByte;
-              break;
+        break;
       case 6: year = receivedByte;
-              break;
+        break;
     }
     ++receivedByteCount;
   }
- 
+
   if (hours & 0b00100000) {
-    amOrPM ="PM";
+    amOrPM = "PM";
   } else {
     amOrPM = "AM";
   }
- 
+
   hours &= 0b00011111;
 
-  lcd.setCursor(0,0);
+  lcd.setCursor(0, 0);
 
   if (hours < 0x10) {
     lcd.print("0");
   }
- 
+
   lcd.print(hours, HEX);
   lcd.print(":");
 
