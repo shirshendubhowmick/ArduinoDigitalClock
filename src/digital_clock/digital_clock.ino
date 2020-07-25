@@ -59,15 +59,15 @@ void setup() {
   // Join I2C bus as master
   Wire.begin();
 
-  if (setTime) {
-    Wire.beginTransmission(ds1307Addr);
-    // Select control register
-    Wire.write(controlRegisterAddr);
-    // Set everything to 0 as no sqaure wave output needed
-    Wire.write(0x00);
-    Wire.endTransmission();
-    delay(1);
+  Wire.beginTransmission(ds1307Addr);
+  // Select control register
+  Wire.write(controlRegisterAddr);
+  // Set everything to 0 as no sqaure wave output needed
+  Wire.write(0x00);
+  Wire.endTransmission();
+  delay(1);
 
+  if (setTime) {
     Wire.beginTransmission(ds1307Addr);
     Wire.write(dayRegisterAddr);
     Wire.write(initialDayCount);
