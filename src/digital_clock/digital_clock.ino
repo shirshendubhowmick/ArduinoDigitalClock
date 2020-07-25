@@ -1,7 +1,7 @@
 #include <Wire.h>
 #include <LiquidCrystal.h>
 
-#define ds1307Addr 0x68
+#define ds1307Addr 0b1101000
 
 #define controlRegisterAddr 0x07
 #define secondRegisterAddr 0x00
@@ -13,12 +13,12 @@
 #define initialYear 0x20
 
 // Hour in 12hr format
-#define initialHour 0b01000010
+#define initialHour 0b01100110
 #define initialMinute 0x38
-#define initiaSecond 0x00
+#define initialSecond 0x00
 
 // Set to true if you want to set initial time during programming
-#define setTime true
+#define setTime false
 
 LiquidCrystal lcd(2, 3, 4, 5, 6, 7, 8);
 
@@ -80,7 +80,7 @@ void setup() {
     Wire.beginTransmission(ds1307Addr);
     // Select second's register
     Wire.write(secondRegisterAddr);
-    Wire.write(initiaSecond);
+    Wire.write(initialSecond);
     Wire.write(initialMinute);
     Wire.write(initialHour);
     Wire.endTransmission();
@@ -97,14 +97,13 @@ void setup() {
 
 
 int seconds, minutes, hours, receivedByteCount = 0, date, month, year, day;
-String amOrPM;
+String amOrPm;
 
 void loop() {
   Wire.beginTransmission(ds1307Addr);
   Wire.write(secondRegisterAddr);
   Wire.endTransmission();
-  delay(1);
-  Wire.requestFrom(ds1307Addr, 7, true);
+  Wire.requestFrom(ds1307Addr, 7);
 
   while (Wire.available()) {
     long int receivedByte = Wire.read();    // receive a byte as character
@@ -128,9 +127,9 @@ void loop() {
   }
 
   if (hours & 0b00100000) {
-    amOrPM = "PM";
+    amOrPm = "PM";
   } else {
-    amOrPM = "AM";
+    amOrPm = "AM";
   }
 
   hours &= 0b00011111;
@@ -157,7 +156,7 @@ void loop() {
 
   lcd.print(seconds, HEX);
   lcd.print(" ");
-  lcd.print(amOrPM);
+  lcd.print(amOrPm);
   lcd.setCursor(0, 1);
 
   if (date < 0x10) {
