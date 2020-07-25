@@ -68,19 +68,19 @@ void setup() {
     Wire.endTransmission();
     delay(1);
     Wire.beginTransmission(ds1307Addr);
-    // Select second's register
-    Wire.write(secondRegisterAddr);
-    Wire.write(initiaSecond);
-    Wire.write(initialMinute);
-    Wire.write(initialHour);
-    Wire.endTransmission();
-    delay(1);
-    Wire.beginTransmission(ds1307Addr);
     Wire.write(dayRegisterAddr);
     Wire.write(initialDayCount);
     Wire.write(initialDate);
     Wire.write(initialMonth);
     Wire.write(initialYear);
+    Wire.endTransmission();
+    delay(1);
+    Wire.beginTransmission(ds1307Addr);
+    // Select second's register
+    Wire.write(secondRegisterAddr);
+    Wire.write(initiaSecond);
+    Wire.write(initialMinute);
+    Wire.write(initialHour);
     Wire.endTransmission();
     delay(1);
   }
@@ -89,76 +89,88 @@ void setup() {
   lcd.print("Welcome");
   lcd.setCursor(0,1);
   lcd.print("Initializing....");
-  delay(5000);
+  delay(3000);
   lcd.clear();
 }
 
 
-int ss, mm, hh, cnt=0, DD, MM, YY, day;
+int seconds, minutes, hours, receivedByteCount=0, date, month, year, day;
 String amOrPM;
+
 void loop() {
   Wire.beginTransmission(ds1307Addr);
   Wire.write(secondRegisterAddr);
   Wire.endTransmission();
+  delay(1);
   Wire.requestFrom(0b1101000, 7);
  
   while(Wire.available()) { 
-    long int c = Wire.read();    // receive a byte as character
-    switch (cnt) {
-      case 0: ss=c;
+    long int receivedByte = Wire.read();    // receive a byte as character
+    switch (receivedByteCount) {
+      case 0: seconds = receivedByte;
               break;
-      case 1: mm=c;
+      case 1: minutes = receivedByte;
               break;
-      case 2: hh=c;
+      case 2: hours = receivedByte;
               break;
-      case 3: day=c;
+      case 3: day = receivedByte;
               break;
-      case 4: DD=c;
+      case 4: date = receivedByte;
               break;
-      case 5: MM=c;
+      case 5: month = receivedByte;
               break;
-      case 6: YY=c;
+      case 6: year = receivedByte;
               break;
     }
-    ++cnt;
+    ++receivedByteCount;
   }
  
-  if((hh&0b00100000)==0x00) {
-    amOrPM="AM";
+  if (hours & 0b00100000) {
+    amOrPM ="PM";
   } else {
-    amOrPM="PM";
+    amOrPM = "AM";
   }
  
-  hh&=0b00011111;
+  hours &= 0b00011111;
+
   lcd.setCursor(0,0);
-  if (hh<0x10) {
+
+  if (hours < 0x10) {
     lcd.print("0");
   }
  
-  lcd.print(hh, HEX);
+  lcd.print(hours, HEX);
   lcd.print(":");
-  if (mm<0x10) {
+
+  if (minutes < 0x10) {
     lcd.print("0");
   }
-  lcd.print(mm, HEX);
+
+  lcd.print(minutes, HEX);
   lcd.print(":");
-  if (ss<0x10) {
+
+  if (seconds < 0x10) {
     lcd.print("0");
   }
-  lcd.print(ss, HEX);
+
+  lcd.print(seconds, HEX);
   lcd.print(" ");
   lcd.print(amOrPM);
   lcd.setCursor(0, 1);
-  if (DD<0x10) {
+
+  if (date < 0x10) {
     lcd.print("0");
   }
-  lcd.print(DD, HEX);
+
+  lcd.print(date, HEX);
   lcd.print("-");
-  lcd.print(getMonthName(MM));
+  lcd.print(getMonthName(month));
   lcd.print("-20");
-  lcd.print(YY, HEX);
+  lcd.print(year, HEX);
   lcd.print(" ");
   lcd.print(getDayName(day));
-  cnt=0;
+
+  receivedByteCount = 0;
+
   delay(1000);
 }
