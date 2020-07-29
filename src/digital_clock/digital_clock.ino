@@ -2,6 +2,7 @@
 #include <LiquidCrystal.h>
 
 #define ds1307Addr 0b1101000
+#define baudRate 9600
 
 #define controlRegisterAddr 0x07
 #define secondRegisterAddr 0x00
@@ -58,6 +59,7 @@ String getMonthName(int monthCount) {
 void setup() {
   // Join I2C bus as master
   Wire.begin();
+  Serial.begin(baudRate);
 
   Wire.beginTransmission(ds1307Addr);
   // Select control register
@@ -96,9 +98,11 @@ void setup() {
 }
 
 
-int seconds, minutes, hours, receivedByteCount = 0, date, month, year, day;
+int seconds, minutes, hours, receivedByteCount = 0, date, month, year, day, settingsCounter = 0;
 String amOrPm;
 
+boolean amOrPmBit;
+boolean settingsMode = false;
 
 void getTimeFromRtc() {
   Wire.beginTransmission(ds1307Addr);
@@ -180,7 +184,126 @@ void displayTimeInLcd() {
   delay(1000);
 }
 
+void settingsInvalidEntry() {
+  lcd.clear();
+  lcd.print("Invalid entry");
+  lcd.setCursor(0, 1);
+  lcd.print("Try again");
+}
+
+void serialEvent() {
+  if(settingsMode) {
+    int value = Serial.parseInt(SKIP_ALL, '-');
+    lcd.clear();
+    if(settingsCounter == 5) {
+      lcd.print(value ? "PM" : "AM");
+    } else {
+      lcd.print(value);
+    }
+    delay(2000);
+    switch(settingsCounter) {
+      case 0:
+      if(value > -1 && value < 8) {
+        day = value;
+        ++settingsCounter;
+        lcd.clear();
+        lcd.print("Date ?");
+      } else {
+        settingsInvalidEntry();
+      }
+      break;
+      case 1:
+        if(value > 0 && value < 32) {
+          date = value;
+          ++settingsCounter;
+          lcd.clear();
+          lcd.print("Month ?");
+        } else {
+          settingsInvalidEntry();
+        }
+        break;
+      case 2:
+        if(value > 0 && value < 13) {
+          month = value;
+          ++settingsCounter;
+          lcd.clear();
+          lcd.print("Year [YY] ?");
+        } else {
+          settingsInvalidEntry();
+        }
+      case 3:
+        if(value > -1 && value < 100) {
+          year = value;
+          ++settingsCounter;
+          lcd.clear();
+          lcd.print("Hour ?");
+        } else {
+          settingsInvalidEntry();
+        }
+        break;
+      case 4:
+        if(value > 0 && value < 13) {
+          hours = value;
+          ++settingsCounter;
+          lcd.clear();
+          lcd.print("AM / PM [0/1] ?");
+        } else {
+          settingsInvalidEntry();
+        }
+        break;
+      case 5:
+        if(value == 0 || value == 1) {
+          amOrPmBit = boolean(value);
+          ++settingsCounter;
+          lcd.clear();
+          lcd.print("Minutes ?");
+        } else {
+          settingsInvalidEntry();
+        }
+        break;
+      case 6:
+        if(value > -1 && value < 60) {
+          minutes = boolean(value);
+          ++settingsCounter;
+          lcd.clear();
+          lcd.print("Seconds ?");
+        } else {
+          settingsInvalidEntry();
+        }
+        break;
+      case 7:
+        if(value > -1 && value < 60) {
+          seconds = boolean(value);
+          settingsCounter = 0;
+          lcd.clear();
+          lcd.print("Saved");
+          delay(2000);
+          settingsMode = false;
+        } else {
+          settingsInvalidEntry();
+        }
+        break;
+      default:
+        lcd.clear();
+        lcd.print("Error");
+        lcd.setCursor(10, 1);
+        lcd.print("Please reset");
+    }
+  } else {
+    String inputCommand = Serial.readString();
+    if(inputCommand == "se") {
+      settingsMode = true;
+      lcd.clear();
+      lcd.print("Settings mode");
+      lcd.setCursor(0, 1);
+      lcd.print("Day count ?");
+    }
+  }
+}
+
 void loop() {
-  getTimeFromRtc();
-  displayTimeInLcd();
+  if(!settingsMode) {
+    getTimeFromRtc();
+    displayTimeInLcd();
+  }
 }
