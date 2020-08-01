@@ -8,19 +8,6 @@
 #define secondRegisterAddr 0x00
 #define dayRegisterAddr 0x03
 
-#define initialDayCount 0x06
-#define initialDate 0x25
-#define initialMonth 0x07
-#define initialYear 0x20
-
-// Hour in 12hr format
-#define initialHour 0b01100110
-#define initialMinute 0x38
-#define initialSecond 0x00
-
-// Set to true if you want to set initial time during programming
-#define setTime false
-
 LiquidCrystal lcd(2, 3, 4, 5, 6, 7, 8);
 
 
@@ -55,6 +42,11 @@ String getMonthName(int monthCount) {
   }
 }
 
+byte decimalToBcd(byte value) {
+  byte tens = value / 10;          // tens = 3 (by integer division)
+  byte units = value % 10;
+  return (tens << 4) | units;
+}
 
 void setup() {
   // Join I2C bus as master
@@ -69,25 +61,6 @@ void setup() {
   Wire.endTransmission();
   delay(1);
 
-  if (setTime) {
-    Wire.beginTransmission(ds1307Addr);
-    Wire.write(dayRegisterAddr);
-    Wire.write(initialDayCount);
-    Wire.write(initialDate);
-    Wire.write(initialMonth);
-    Wire.write(initialYear);
-    Wire.endTransmission();
-    delay(1);
-
-    Wire.beginTransmission(ds1307Addr);
-    // Select second's register
-    Wire.write(secondRegisterAddr);
-    Wire.write(initialSecond);
-    Wire.write(initialMinute);
-    Wire.write(initialHour);
-    Wire.endTransmission();
-    delay(1);
-  }
   lcd.begin(16, 2);
   lcd.setCursor(5, 0);
   lcd.print("Welcome");
@@ -184,6 +157,29 @@ void displayTimeInLcd() {
   delay(1000);
 }
 
+void setTimeInRtc() {
+    Wire.beginTransmission(ds1307Addr);
+    Wire.write(dayRegisterAddr);
+    Wire.write(decimalToBcd(day));
+    Wire.write(decimalToBcd(date));
+    Wire.write(decimalToBcd(month));
+    Wire.write(decimalToBcd(year));
+    Wire.endTransmission();
+    delay(1);
+
+    Wire.beginTransmission(ds1307Addr);
+    // Select second's register
+    Wire.write(secondRegisterAddr);
+    Wire.write(0b01111111 & decimalToBcd(seconds));
+    Wire.write(decimalToBcd(minutes));
+    byte hoursInBcd = decimalToBcd(hours);
+    hoursInBcd = 0b01000000 | hoursInBcd;
+    hoursInBcd = (amOrPmBit ? 0b01100000 | hoursInBcd : 0b01011111 & hoursInBcd);
+    Wire.write(hoursInBcd);
+    Wire.endTransmission();
+    delay(1);
+}
+
 void settingsInvalidEntry() {
   lcd.clear();
   lcd.print("Invalid entry");
@@ -211,7 +207,7 @@ void serialEvent() {
       } else {
         settingsInvalidEntry();
       }
-      break;
+        break;
       case 1:
         if(value > 0 && value < 32) {
           date = value;
@@ -231,6 +227,7 @@ void serialEvent() {
         } else {
           settingsInvalidEntry();
         }
+        break;
       case 3:
         if(value > -1 && value < 100) {
           year = value;
@@ -263,7 +260,7 @@ void serialEvent() {
         break;
       case 6:
         if(value > -1 && value < 60) {
-          minutes = boolean(value);
+          minutes = value;
           ++settingsCounter;
           lcd.clear();
           lcd.print("Seconds ?");
@@ -273,8 +270,9 @@ void serialEvent() {
         break;
       case 7:
         if(value > -1 && value < 60) {
-          seconds = boolean(value);
+          seconds = value;
           settingsCounter = 0;
+          setTimeInRtc();
           lcd.clear();
           lcd.print("Saved");
           delay(2000);
